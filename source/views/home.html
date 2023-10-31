@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@5.x/css/materialdesignicons.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@10.0.2/dist/sweetalert2.min.css">  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+  <style>
+  #app{
+      background-color:#c1deeb;      
+  }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <v-app>
+      <v-main>   
+       <!--<h2 class="text-center">CRUD usando APIREST con Node JS</h2>-->
+       <!-- Botón CREAR -->                
+        <v-card class="mx-auto mt-5" color="transparent" max-width="1280" elevation="0">            
+        <v-btn class="mx-2" fab dark color="#00E8FF" @click="formNuevo()"><v-icon dark>mdi-plus</v-icon></v-btn>           
+        <!-- Tabla y formulario -->
+        <v-simple-table class="mt-5">
+            <template v-slot:default>
+                <thead>
+                    <tr class="blue-grey darken-2">
+                        <th class="white--text text-center">ID</th>
+                        <th class="white--text text-center">E-mail</th>
+                        <th class="white--text text-center">Nombre del usuario</th>
+                        <th class="white--text text-center">Contraseña encriptada</th>
+                        <th class="white--text text-center">Estado</th>
+                        <th class="white--text text-center">Número telefónico</th>
+                        <th class="white--text text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="users in users" :key= "users.id">
+                    <td>{{ users.id }}</td>
+                    <td>{{ users.email }}</td>
+                    <td>{{ users.name }}</td>
+                    <td>{{ users.password }}</td>
+                    <td>{{ users.address }}</td>
+                    <td>{{ users.number }}</td>
+                    <td>
+                        <v-btn class="pink" dark small fab  @click="formEditar(users.id, users.descripcion, users.precio, users.stock)"><v-icon>mdi-pencil</v-icon></v-btn>
+                        <v-btn class="error" fab dark small @click="borrar(users.id)"><v-icon>mdi-delete</v-icon></v-btn>
+                    </td>
+                    </tr>
+                </tbody>
+            </template>
+        </v-simple-table>
+        </v-card>        
+      <!-- Componente de Diálogo para CREAR y EDITAR -->
+      <v-dialog v-model="dialog" max-width="1000">        
+        <v-card>
+          <v-card-title class="blue darken-4 white--text">Ingresar nuevo usuario</v-card-title>    
+          <v-card-text>            
+            <v-form>             
+              <v-container>
+                <v-row>
+                  <input v-model="users.id" hidden></input>
+                  <v-col cols="12" md="4">
+                    <v-text-field v-model="users.email" label="E-mail" solo required>{{users.email}}</v-text-field>
+                  </v-col>
+                  <v-col cols="12" md="4">
+                    <v-text-field v-model="users.name" label="Nombre" solo required>{{users.name}}</v-text-field>
+                  </v-col>
+                  <v-col cols="12" md="4">
+                    <v-text-field v-model="users.password" label="Contraseña" type="password" solo required>{{users.password}}</v-text-field>
+                  </v-col>
+                  <v-col cols="12" md="4">
+                    <v-text-field v-model="users.number" label="Número" solo required>{{users.number}}</v-text-field>
+                  </v-col>
+                  <v-col cols="12" md="4">
+                    <v-text-field v-model="users.address" label="Estado" solo required>{{users.address}}</v-text-field>
+                  </v-col>
+
+                </v-row>
+              </v-container>            
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn @click="dialog=false" color="blue-grey" dark>Cancelar</v-btn>
+            <v-btn @click="guardar()" type="submit" color="purple accent-3" dark>Guardar</v-btn>
+          </v-card-actions>
+          </v-form>
+        </v-card>
+      </v-dialog>
+      </v-main>
+    </v-app>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.20.0/axios.js" integrity="sha512-nqIFZC8560+CqHgXKez61MI0f9XSTKLkm0zFVm/99Wt0jSTZ7yeeYwbzyl0SGn/s8Mulbdw+ScCG41hmO2+FKw==" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10.0.2/dist/sweetalert2.all.min.js"></script>
+
+  <script>
+    let url = 'http://localhost:400/';
+    new Vue({
+      el: '#app',
+      vuetify: new Vuetify(),
+       data() {
+        return {            
+            users: [0],
+            dialog: false,
+            operacion: '',            
+            users:{
+                id: null,
+                email:'',
+                name:'',
+                password:'',
+                address: '',
+                number:''
+            }          
+        }
+       },
+       created(){               
+            this.mostrar()
+       },  
+       methods:{
+            mostrar:function(){
+              axios.get(url)
+              .then(response =>{
+                this.users = response.data;                   
+              })
+            },
+            crear:function(){
+                let parametros = {email:this.users.email, number:this.users.number, address:this.users.address };                
+                axios.post(url, parametros).then(response =>{
+                  this.mostrar();
+                });     
+                this.users.email="";
+                this.users.number="";
+                this.users.address="";
+            },                        
+            editar: function(){
+            let parametros = {email:this.users.email, name:this.users.name, password:this.users.password, address:this.users.address, number:this.users.number,
+                id:this.users.id};                                       
+                 axios.put(url+this.users.id, parametros)                            
+                  .then(response => {                                
+                     this.mostrar();
+                  })                
+                  .catch(error => {
+                      console.log(error);            
+                  });
+            },
+
+            borrar:function(id){
+             Swal.fire({
+                title: '¿Confirma borrar el usuario del registro?',   
+                confirmButtonText: `Confirmar`,                  
+                showCancelButton: true,                          
+              }).then((result) => {                
+                if (result.isConfirmed) {      
+                      axios.delete(url+id)
+                      .then(response =>{           
+                          this.mostrar();
+                       });      
+                      Swal.fire('Usuario eliminado', '', 'success')
+                } else if (result.isDenied) {                  
+                }
+              });              
+            },
+
+            //Botones y formularios
+            guardar:function(){
+              if(this.operacion=='crear'){
+                this.crear();                
+              }
+              if(this.operacion=='editar'){ 
+                this.editar();                           
+              }
+              this.dialog=false;                        
+            }, 
+            formNuevo:function () {
+              this.dialog=true;
+              this.operacion='crear';
+              this.users.email='';                           
+              this.users.number='';
+              this.users.address='';
+            },
+            formEditar:function(id, email, name, password, address, number){              
+              this.users.id = id;
+              this.users.email = email;
+              this.users.name = name;
+              this.users.password = password;
+              this.users.address = address;
+              this.users.number = number;
+              this.dialog=true;                            
+              this.operacion='editar';
+            }
+       }      
+    });
+  </script>
+</body>
+</html> 
+
